@@ -1,12 +1,12 @@
 /* chacha_asm.S */
 /*
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -42,7 +42,9 @@
 #define HAVE_INTEL_AVX1
 #endif /* HAVE_INTEL_AVX1 */
 #ifndef NO_AVX2_SUPPORT
+#ifndef HAVE_INTEL_AVX2
 #define HAVE_INTEL_AVX2
+#endif /* HAVE_INTEL_AVX2 */
 #endif /* NO_AVX2_SUPPORT */
 
 #ifdef WOLFSSL_X86_64_BUILD
@@ -536,9 +538,19 @@ chacha_encrypt_avx1:
 .p2align	4
 _chacha_encrypt_avx1:
 #endif /* __APPLE__ */
+        pushq	%r12
+        pushq	%r13
+        pushq	%r14
+        pushq	%r15
         subq	$0x190, %rsp
         movq	%rsp, %r9
         leaq	256(%rsp), %r10
+        leaq	L_chacha20_avx1_rotl8(%rip), %r12
+        leaq	L_chacha20_avx1_rotl16(%rip), %r13
+        leaq	L_chacha20_avx1_add(%rip), %r14
+        leaq	L_chacha20_avx1_four(%rip), %r15
+        addq	$15, %r9
+        addq	$15, %r10
         andq	$-16, %r9
         andq	$-16, %r10
         movl	%ecx, %eax
@@ -560,7 +572,7 @@ _chacha_encrypt_avx1:
         vpshufd	$0x00, 52(%rdi), %xmm13
         vpshufd	$0x00, 56(%rdi), %xmm14
         vpshufd	$0x00, 60(%rdi), %xmm15
-        vpaddd	L_chacha20_avx1_add(%rip), %xmm12, %xmm12
+        vpaddd	(%r14), %xmm12, %xmm12
         vmovdqa	%xmm0, (%r9)
         vmovdqa	%xmm1, 16(%r9)
         vmovdqa	%xmm2, 32(%r9)
@@ -584,22 +596,22 @@ L_chacha20_avx1_loop128:
         vpaddd	%xmm4, %xmm0, %xmm0
         vpxor	%xmm0, %xmm12, %xmm12
         vmovdqa	48(%r10), %xmm11
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm12, %xmm12
+        vpshufb	(%r13), %xmm12, %xmm12
         vpaddd	%xmm12, %xmm8, %xmm8
         vpxor	%xmm8, %xmm4, %xmm4
         vpaddd	%xmm5, %xmm1, %xmm1
         vpxor	%xmm1, %xmm13, %xmm13
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm13, %xmm13
+        vpshufb	(%r13), %xmm13, %xmm13
         vpaddd	%xmm13, %xmm9, %xmm9
         vpxor	%xmm9, %xmm5, %xmm5
         vpaddd	%xmm6, %xmm2, %xmm2
         vpxor	%xmm2, %xmm14, %xmm14
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm14, %xmm14
+        vpshufb	(%r13), %xmm14, %xmm14
         vpaddd	%xmm14, %xmm10, %xmm10
         vpxor	%xmm10, %xmm6, %xmm6
         vpaddd	%xmm7, %xmm3, %xmm3
         vpxor	%xmm3, %xmm15, %xmm15
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm15, %xmm15
+        vpshufb	(%r13), %xmm15, %xmm15
         vpaddd	%xmm15, %xmm11, %xmm11
         vpxor	%xmm11, %xmm7, %xmm7
         vmovdqa	%xmm11, 48(%r10)
@@ -618,22 +630,22 @@ L_chacha20_avx1_loop128:
         vpaddd	%xmm4, %xmm0, %xmm0
         vpxor	%xmm0, %xmm12, %xmm12
         vmovdqa	48(%r10), %xmm11
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm12, %xmm12
+        vpshufb	(%r12), %xmm12, %xmm12
         vpaddd	%xmm12, %xmm8, %xmm8
         vpxor	%xmm8, %xmm4, %xmm4
         vpaddd	%xmm5, %xmm1, %xmm1
         vpxor	%xmm1, %xmm13, %xmm13
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm13, %xmm13
+        vpshufb	(%r12), %xmm13, %xmm13
         vpaddd	%xmm13, %xmm9, %xmm9
         vpxor	%xmm9, %xmm5, %xmm5
         vpaddd	%xmm6, %xmm2, %xmm2
         vpxor	%xmm2, %xmm14, %xmm14
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm14, %xmm14
+        vpshufb	(%r12), %xmm14, %xmm14
         vpaddd	%xmm14, %xmm10, %xmm10
         vpxor	%xmm10, %xmm6, %xmm6
         vpaddd	%xmm7, %xmm3, %xmm3
         vpxor	%xmm3, %xmm15, %xmm15
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm15, %xmm15
+        vpshufb	(%r12), %xmm15, %xmm15
         vpaddd	%xmm15, %xmm11, %xmm11
         vpxor	%xmm11, %xmm7, %xmm7
         vmovdqa	%xmm11, 48(%r10)
@@ -652,22 +664,22 @@ L_chacha20_avx1_loop128:
         vpaddd	%xmm5, %xmm0, %xmm0
         vpxor	%xmm0, %xmm15, %xmm15
         vmovdqa	48(%r10), %xmm11
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm15, %xmm15
+        vpshufb	(%r13), %xmm15, %xmm15
         vpaddd	%xmm15, %xmm10, %xmm10
         vpxor	%xmm10, %xmm5, %xmm5
         vpaddd	%xmm6, %xmm1, %xmm1
         vpxor	%xmm1, %xmm12, %xmm12
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm12, %xmm12
+        vpshufb	(%r13), %xmm12, %xmm12
         vpaddd	%xmm12, %xmm11, %xmm11
         vpxor	%xmm11, %xmm6, %xmm6
         vpaddd	%xmm7, %xmm2, %xmm2
         vpxor	%xmm2, %xmm13, %xmm13
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm13, %xmm13
+        vpshufb	(%r13), %xmm13, %xmm13
         vpaddd	%xmm13, %xmm8, %xmm8
         vpxor	%xmm8, %xmm7, %xmm7
         vpaddd	%xmm4, %xmm3, %xmm3
         vpxor	%xmm3, %xmm14, %xmm14
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm14, %xmm14
+        vpshufb	(%r13), %xmm14, %xmm14
         vpaddd	%xmm14, %xmm9, %xmm9
         vpxor	%xmm9, %xmm4, %xmm4
         vmovdqa	%xmm11, 48(%r10)
@@ -686,22 +698,22 @@ L_chacha20_avx1_loop128:
         vpaddd	%xmm5, %xmm0, %xmm0
         vpxor	%xmm0, %xmm15, %xmm15
         vmovdqa	48(%r10), %xmm11
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm15, %xmm15
+        vpshufb	(%r12), %xmm15, %xmm15
         vpaddd	%xmm15, %xmm10, %xmm10
         vpxor	%xmm10, %xmm5, %xmm5
         vpaddd	%xmm6, %xmm1, %xmm1
         vpxor	%xmm1, %xmm12, %xmm12
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm12, %xmm12
+        vpshufb	(%r12), %xmm12, %xmm12
         vpaddd	%xmm12, %xmm11, %xmm11
         vpxor	%xmm11, %xmm6, %xmm6
         vpaddd	%xmm7, %xmm2, %xmm2
         vpxor	%xmm2, %xmm13, %xmm13
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm13, %xmm13
+        vpshufb	(%r12), %xmm13, %xmm13
         vpaddd	%xmm13, %xmm8, %xmm8
         vpxor	%xmm8, %xmm7, %xmm7
         vpaddd	%xmm4, %xmm3, %xmm3
         vpxor	%xmm3, %xmm14, %xmm14
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm14, %xmm14
+        vpshufb	(%r12), %xmm14, %xmm14
         vpaddd	%xmm14, %xmm9, %xmm9
         vpxor	%xmm9, %xmm4, %xmm4
         vmovdqa	%xmm11, 48(%r10)
@@ -835,7 +847,7 @@ L_chacha20_avx1_loop128:
         vmovdqa	192(%r9), %xmm12
         addq	$0x100, %rsi
         addq	$0x100, %rdx
-        vpaddd	L_chacha20_avx1_four(%rip), %xmm12, %xmm12
+        vpaddd	(%r15), %xmm12, %xmm12
         subl	$0x100, %ecx
         vmovdqa	%xmm12, 192(%r9)
         cmpl	$0x100, %ecx
@@ -858,7 +870,7 @@ L_chacha20_avx1_loop128:
         vmovdqa	240(%r9), %xmm15
         jmp	L_chacha20_avx1_start128
 L_chacha20_avx1_done128:
-        shl	$2, %eax
+        shll	$2, %eax
         addl	%eax, 48(%rdi)
 L_chacha20_avx1_end128:
         cmpl	$0x40, %ecx
@@ -876,7 +888,7 @@ L_chacha20_avx1_block_start:
 L_chacha20_avx1_block_crypt_start:
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm3, %xmm3
+        vpshufb	(%r13), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$20, %xmm1, %xmm4
@@ -884,7 +896,7 @@ L_chacha20_avx1_block_crypt_start:
         vpxor	%xmm4, %xmm1, %xmm1
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm3, %xmm3
+        vpshufb	(%r12), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$25, %xmm1, %xmm4
@@ -895,7 +907,7 @@ L_chacha20_avx1_block_crypt_start:
         vpshufd	$0x93, %xmm3, %xmm3
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm3, %xmm3
+        vpshufb	(%r13), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$20, %xmm1, %xmm4
@@ -903,7 +915,7 @@ L_chacha20_avx1_block_crypt_start:
         vpxor	%xmm4, %xmm1, %xmm1
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm3, %xmm3
+        vpshufb	(%r12), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$25, %xmm1, %xmm4
@@ -952,7 +964,7 @@ L_chacha20_avx1_block_done:
 L_chacha20_avx1_partial_crypt_start:
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm3, %xmm3
+        vpshufb	(%r13), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$20, %xmm1, %xmm4
@@ -960,7 +972,7 @@ L_chacha20_avx1_partial_crypt_start:
         vpxor	%xmm4, %xmm1, %xmm1
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm3, %xmm3
+        vpshufb	(%r12), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$25, %xmm1, %xmm4
@@ -971,7 +983,7 @@ L_chacha20_avx1_partial_crypt_start:
         vpshufd	$0x93, %xmm3, %xmm3
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl16(%rip), %xmm3, %xmm3
+        vpshufb	(%r13), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$20, %xmm1, %xmm4
@@ -979,7 +991,7 @@ L_chacha20_avx1_partial_crypt_start:
         vpxor	%xmm4, %xmm1, %xmm1
         vpaddd	%xmm1, %xmm0, %xmm0
         vpxor	%xmm0, %xmm3, %xmm3
-        vpshufb	L_chacha20_avx1_rotl8(%rip), %xmm3, %xmm3
+        vpshufb	(%r12), %xmm3, %xmm3
         vpaddd	%xmm3, %xmm2, %xmm2
         vpxor	%xmm2, %xmm1, %xmm1
         vpsrld	$25, %xmm1, %xmm4
@@ -1024,6 +1036,10 @@ L_chacha20_avx1_partial_end64:
         movl	%r8d, 76(%rdi)
 L_chacha20_avx1_partial_done:
         addq	$0x190, %rsp
+        popq	%r15
+        popq	%r14
+        popq	%r13
+        popq	%r12
         repz retq
 #ifndef __APPLE__
 .size	chacha_encrypt_avx1,.-chacha_encrypt_avx1
@@ -1094,9 +1110,18 @@ chacha_encrypt_avx2:
 .p2align	4
 _chacha_encrypt_avx2:
 #endif /* __APPLE__ */
-        subq	$0x310, %rsp
+        pushq	%r12
+        pushq	%r13
+        pushq	%r14
+        subq	$0x320, %rsp
         movq	%rsp, %r9
+        leaq	L_chacha20_avx2_rotl8(%rip), %r11
+        leaq	L_chacha20_avx2_rotl16(%rip), %r12
+        leaq	L_chacha20_avx2_add(%rip), %r13
+        leaq	L_chacha20_avx2_eight(%rip), %r14
         leaq	512(%rsp), %r10
+        addq	$31, %r9
+        addq	$31, %r10
         andq	$-32, %r9
         andq	$-32, %r10
         movl	%ecx, %eax
@@ -1118,7 +1143,7 @@ _chacha_encrypt_avx2:
         vpbroadcastd	52(%rdi), %ymm13
         vpbroadcastd	56(%rdi), %ymm14
         vpbroadcastd	60(%rdi), %ymm15
-        vpaddd	L_chacha20_avx2_add(%rip), %ymm12, %ymm12
+        vpaddd	(%r13), %ymm12, %ymm12
         vmovdqa	%ymm0, (%r9)
         vmovdqa	%ymm1, 32(%r9)
         vmovdqa	%ymm2, 64(%r9)
@@ -1142,22 +1167,22 @@ L_chacha20_avx2_loop256:
         vpaddd	%ymm4, %ymm0, %ymm0
         vpxor	%ymm0, %ymm12, %ymm12
         vmovdqa	96(%r10), %ymm11
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm12, %ymm12
+        vpshufb	(%r12), %ymm12, %ymm12
         vpaddd	%ymm12, %ymm8, %ymm8
         vpxor	%ymm8, %ymm4, %ymm4
         vpaddd	%ymm5, %ymm1, %ymm1
         vpxor	%ymm1, %ymm13, %ymm13
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm13, %ymm13
+        vpshufb	(%r12), %ymm13, %ymm13
         vpaddd	%ymm13, %ymm9, %ymm9
         vpxor	%ymm9, %ymm5, %ymm5
         vpaddd	%ymm6, %ymm2, %ymm2
         vpxor	%ymm2, %ymm14, %ymm14
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm14, %ymm14
+        vpshufb	(%r12), %ymm14, %ymm14
         vpaddd	%ymm14, %ymm10, %ymm10
         vpxor	%ymm10, %ymm6, %ymm6
         vpaddd	%ymm7, %ymm3, %ymm3
         vpxor	%ymm3, %ymm15, %ymm15
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm15, %ymm15
+        vpshufb	(%r12), %ymm15, %ymm15
         vpaddd	%ymm15, %ymm11, %ymm11
         vpxor	%ymm11, %ymm7, %ymm7
         vmovdqa	%ymm11, 96(%r10)
@@ -1176,22 +1201,22 @@ L_chacha20_avx2_loop256:
         vpaddd	%ymm4, %ymm0, %ymm0
         vpxor	%ymm0, %ymm12, %ymm12
         vmovdqa	96(%r10), %ymm11
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm12, %ymm12
+        vpshufb	(%r11), %ymm12, %ymm12
         vpaddd	%ymm12, %ymm8, %ymm8
         vpxor	%ymm8, %ymm4, %ymm4
         vpaddd	%ymm5, %ymm1, %ymm1
         vpxor	%ymm1, %ymm13, %ymm13
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm13, %ymm13
+        vpshufb	(%r11), %ymm13, %ymm13
         vpaddd	%ymm13, %ymm9, %ymm9
         vpxor	%ymm9, %ymm5, %ymm5
         vpaddd	%ymm6, %ymm2, %ymm2
         vpxor	%ymm2, %ymm14, %ymm14
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm14, %ymm14
+        vpshufb	(%r11), %ymm14, %ymm14
         vpaddd	%ymm14, %ymm10, %ymm10
         vpxor	%ymm10, %ymm6, %ymm6
         vpaddd	%ymm7, %ymm3, %ymm3
         vpxor	%ymm3, %ymm15, %ymm15
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm15, %ymm15
+        vpshufb	(%r11), %ymm15, %ymm15
         vpaddd	%ymm15, %ymm11, %ymm11
         vpxor	%ymm11, %ymm7, %ymm7
         vmovdqa	%ymm11, 96(%r10)
@@ -1210,22 +1235,22 @@ L_chacha20_avx2_loop256:
         vpaddd	%ymm5, %ymm0, %ymm0
         vpxor	%ymm0, %ymm15, %ymm15
         vmovdqa	96(%r10), %ymm11
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm15, %ymm15
+        vpshufb	(%r12), %ymm15, %ymm15
         vpaddd	%ymm15, %ymm10, %ymm10
         vpxor	%ymm10, %ymm5, %ymm5
         vpaddd	%ymm6, %ymm1, %ymm1
         vpxor	%ymm1, %ymm12, %ymm12
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm12, %ymm12
+        vpshufb	(%r12), %ymm12, %ymm12
         vpaddd	%ymm12, %ymm11, %ymm11
         vpxor	%ymm11, %ymm6, %ymm6
         vpaddd	%ymm7, %ymm2, %ymm2
         vpxor	%ymm2, %ymm13, %ymm13
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm13, %ymm13
+        vpshufb	(%r12), %ymm13, %ymm13
         vpaddd	%ymm13, %ymm8, %ymm8
         vpxor	%ymm8, %ymm7, %ymm7
         vpaddd	%ymm4, %ymm3, %ymm3
         vpxor	%ymm3, %ymm14, %ymm14
-        vpshufb	L_chacha20_avx2_rotl16(%rip), %ymm14, %ymm14
+        vpshufb	(%r12), %ymm14, %ymm14
         vpaddd	%ymm14, %ymm9, %ymm9
         vpxor	%ymm9, %ymm4, %ymm4
         vmovdqa	%ymm11, 96(%r10)
@@ -1244,22 +1269,22 @@ L_chacha20_avx2_loop256:
         vpaddd	%ymm5, %ymm0, %ymm0
         vpxor	%ymm0, %ymm15, %ymm15
         vmovdqa	96(%r10), %ymm11
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm15, %ymm15
+        vpshufb	(%r11), %ymm15, %ymm15
         vpaddd	%ymm15, %ymm10, %ymm10
         vpxor	%ymm10, %ymm5, %ymm5
         vpaddd	%ymm6, %ymm1, %ymm1
         vpxor	%ymm1, %ymm12, %ymm12
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm12, %ymm12
+        vpshufb	(%r11), %ymm12, %ymm12
         vpaddd	%ymm12, %ymm11, %ymm11
         vpxor	%ymm11, %ymm6, %ymm6
         vpaddd	%ymm7, %ymm2, %ymm2
         vpxor	%ymm2, %ymm13, %ymm13
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm13, %ymm13
+        vpshufb	(%r11), %ymm13, %ymm13
         vpaddd	%ymm13, %ymm8, %ymm8
         vpxor	%ymm8, %ymm7, %ymm7
         vpaddd	%ymm4, %ymm3, %ymm3
         vpxor	%ymm3, %ymm14, %ymm14
-        vpshufb	L_chacha20_avx2_rotl8(%rip), %ymm14, %ymm14
+        vpshufb	(%r11), %ymm14, %ymm14
         vpaddd	%ymm14, %ymm9, %ymm9
         vpxor	%ymm9, %ymm4, %ymm4
         vmovdqa	%ymm11, 96(%r10)
@@ -1409,7 +1434,7 @@ L_chacha20_avx2_loop256:
         vmovdqa	384(%r9), %ymm12
         addq	$0x200, %rsi
         addq	$0x200, %rdx
-        vpaddd	L_chacha20_avx2_eight(%rip), %ymm12, %ymm12
+        vpaddd	(%r14), %ymm12, %ymm12
         subl	$0x200, %ecx
         vmovdqa	%ymm12, 384(%r9)
         cmpl	$0x200, %ecx
@@ -1432,7 +1457,7 @@ L_chacha20_avx2_loop256:
         vmovdqa	480(%r9), %ymm15
         jmp	L_chacha20_avx2_start256
 L_chacha20_avx2_done256:
-        shl	$3, %eax
+        shll	$3, %eax
         addl	%eax, 48(%rdi)
 L_chacha20_avx2_end256:
 #ifndef __APPLE__
@@ -1440,7 +1465,11 @@ L_chacha20_avx2_end256:
 #else
         callq	_chacha_encrypt_avx1
 #endif /* __APPLE__ */
-        addq	$0x310, %rsp
+        vzeroupper
+        addq	$0x320, %rsp
+        popq	%r14
+        popq	%r13
+        popq	%r12
         repz retq
 #ifndef __APPLE__
 .size	chacha_encrypt_avx2,.-chacha_encrypt_avx2

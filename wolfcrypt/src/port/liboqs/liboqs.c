@@ -1,12 +1,12 @@
 /* liboqs.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -19,6 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
+
 /*
 
 DESCRIPTION
@@ -26,15 +28,6 @@ This library provides the support interfaces to the liboqs library providing
 implementations for Post-Quantum cryptography algorithms.
 
 */
-
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif
-
-#include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/types.h>
-#include <wolfssl/wolfcrypt/logging.h>
-#include <wolfssl/wolfcrypt/error-crypt.h>
 
 #include <wolfssl/wolfcrypt/port/liboqs/liboqs.h>
 
@@ -60,7 +53,7 @@ static void wolfSSL_liboqsGetRandomData(uint8_t* buffer, size_t numOfBytes)
         ret = wc_RNG_GenerateBlock(liboqsCurrentRNG, buffer,
                                    numOfBytes_word32);
         if (ret != 0) {
-            /* ToDo: liboqs exits programm if RNG fails,
+            /* ToDo: liboqs exits program if RNG fails,
              * not sure what to do here
              */
             WOLFSSL_MSG_EX(
@@ -119,14 +112,14 @@ int wolfSSL_liboqsRngMutexLock(WC_RNG* rng)
 
 int wolfSSL_liboqsRngMutexUnlock(void)
 {
-    int ret = BAD_MUTEX_E;
-
     liboqsCurrentRNG = &liboqsDefaultRNG;
 
     if (liboqs_init) {
-        ret = wc_UnLockMutex(&liboqsRNGMutex);
+        return wc_UnLockMutex(&liboqsRNGMutex);
     }
-    return ret;
+    else {
+        return BAD_MUTEX_E;
+    }
 }
 
 #endif /* HAVE_LIBOQS */

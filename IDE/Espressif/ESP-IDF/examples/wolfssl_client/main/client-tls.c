@@ -1,12 +1,12 @@
 /* client-tls.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -18,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
+
 #include "client-tls.h"
 
 /* Espressif FreeRTOS */
@@ -36,8 +37,17 @@
 
 /* wolfSSL */
 #include <wolfssl/wolfcrypt/settings.h>
+/* This project not yet using the library */
+#undef USE_WOLFSSL_ESP_SDK_WIFI
 #include <wolfssl/ssl.h>
 
+#if defined(WOLFSSL_WC_MLKEM)
+    #include <wolfssl/wolfcrypt/mlkem.h>
+    #include <wolfssl/wolfcrypt/wc_mlkem.h>
+#endif
+#if defined(USE_CERT_BUFFERS_2048) || defined(USE_CERT_BUFFERS_1024)
+    #include <wolfssl/certs_test.h>
+#endif
 #ifdef WOLFSSL_TRACK_MEMORY
     #include <wolfssl/wolfcrypt/mem_track.h>
 #endif
@@ -180,19 +190,23 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
     struct hostent *hp;
     struct ip4_addr *ip4_addr;
     int ret_i; /* interim return values */
+    int err; /* interim return values */
     int sockfd;
     int doPeerCheck;
     int sendGet;
+#ifdef DEBUG_WOLFSSL
+    int this_heap = 0;
+#endif
 #ifndef NO_DH
     int minDhKeyBits = DEFAULT_MIN_DHKEY_BITS;
 #endif
-    size_t len;
 
     /* declare wolfSSL objects */
     WOLFSSL_CTX* ctx;
     WOLFSSL*     ssl;
 
-    wolfSSL_Debugging_ON();
+    size_t len;
+
     WOLFSSL_ENTER(TLS_SMP_CLIENT_TASK_NAME);
 
     doPeerCheck = 1;
@@ -226,8 +240,8 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
     /* Create and initialize WOLFSSL_CTX */
     ctx = wolfSSL_CTX_new(wolfSSLv23_client_method()); /* SSL 3.0 - TLS 1.3. */
     /*   options:   */
-    /* ctx = wolfSSL_CTX_new(wolfTLSv1_2_client_method());      only TLS 1.2 */
-    /* ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method());      only TLS 1.3 */
+    /* ctx = wolfSSL_CTX_new(wolfSSLv1_2_client_method());      only TLS 1.2 */
+    /* ctx = wolfSSL_CTX_new(wolfSSLv1_3_client_method());      only TLS 1.3 */
     /* wolfSSL_CTX_NoTicketTLSv12(); */
     /* wolfSSL_NoTicketTLSv12();     */
     if (ctx == NULL) {
@@ -285,43 +299,47 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
 
 /* see user_settings PROJECT_DH for HAVE_DH and HAVE_FFDHE_2048 */
 #ifndef NO_DH
-    ret = wolfSSL_CTX_SetMinDhKey_Sz(ctx, (word16)minDhKeyBits);
-     if (ret != SSL_SUCCESS) {
+    ret_i = wolfSSL_CTX_SetMinDhKey_Sz(ctx, (word16)minDhKeyBits);
+     if (ret_i != WOLFSSL_SUCCESS) {
         ESP_LOGE(TAG, "Error setting minimum DH key size");
     }
 #endif
 
     /* no peer check */
     if (doPeerCheck == 0) {
-        ESP_LOGW(TAG, "doPeerCheck == 0");
+        ESP_LOGW(TAG, "doPeerCheck == 0; WOLFSSL_VERIFY_NONE");
         wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_NONE, 0);
     }
     else {
-        ESP_LOGW(TAG, "doPeerCheck != 0");
+        ESP_LOGI(TAG, "doPeerCheck != 0");
         WOLFSSL_MSG("Loading... our cert");
         /* load our certificate */
         ret_i = wolfSSL_CTX_use_certificate_chain_buffer_format(ctx,
                                          CTX_CLIENT_CERT,
                                          CTX_CLIENT_CERT_SIZE,
                                          CTX_CLIENT_CERT_TYPE);
-        if (ret_i != SSL_SUCCESS) {
-            ESP_LOGE(TAG, "ERROR: failed to load chain %d, "
+        if (ret_i != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "ERROR: failed to load our cert chain %d, "
                           "please check the file.", ret_i);
         }
 
         /* Load client certificates into WOLFSSL_CTX */
-        WOLFSSL_MSG("Loading...cert");
+        WOLFSSL_MSG("Loading... CA cert");
         ret_i = wolfSSL_CTX_load_verify_buffer(ctx,
                                          CTX_CA_CERT,
                                          CTX_CA_CERT_SIZE,
                                          CTX_CA_CERT_TYPE);
+        if (ret_i != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "ERROR: failed to load CA cert %d, "
+                          "please check the file.\n", ret_i) ;
+        }
 
+        WOLFSSL_MSG("Loading... our key");
         ret_i = wolfSSL_CTX_use_PrivateKey_buffer(ctx,
                                          CTX_CLIENT_KEY,
                                          CTX_CLIENT_KEY_SIZE,
                                          CTX_CLIENT_KEY_TYPE);
-        if(ret_i  != SSL_SUCCESS) {
-            wolfSSL_CTX_free(ctx) ; ctx = NULL ;
+        if (ret_i != WOLFSSL_SUCCESS) {
             ESP_LOGE(TAG, "ERROR: failed to load key %d, "
                           "please check the file.\n", ret_i) ;
         }
@@ -351,17 +369,20 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
 
     /* Connect to the server */
     sprintf(buff,
-            "Connecting to server....%s(port:%d)",
+            "Connecting to server....%s (port:%d)",
             TLS_SMP_TARGET_HOST,
             TLS_SMP_DEFAULT_PORT);
-    WOLFSSL_MSG(buff);
-    printf("%s\n", buff);
+    ESP_LOGI(TAG, "%s\n", buff);
 
     if ((ret_i = connect(sockfd,
                        (struct sockaddr *)&servAddr,
                        sizeof(servAddr))) == -1) {
         ESP_LOGE(TAG, "ERROR: failed to connect ret=%d\n", ret_i);
     }
+
+#if defined(WOLFSSL_EXPERIMENTAL_SETTINGS)
+        ESP_LOGW(TAG, "WOLFSSL_EXPERIMENTAL_SETTINGS is enabled");
+#endif
 
     WOLFSSL_MSG("Create a WOLFSSL object");
     /* Create a WOLFSSL object */
@@ -372,6 +393,63 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
 #ifdef DEBUG_WOLFSSL
         ESP_LOGI(TAG, "\nCreated WOLFSSL object:");
         ShowCiphers(ssl);
+        this_heap = esp_get_free_heap_size();
+        ESP_LOGI(TAG, "tls_smp_client_task heap @ %p = %d",
+                      &this_heap, this_heap);
+#endif
+
+#if defined(CONFIG_ESP_WOLFSSL_ENABLE_MLKEM)
+    /* Kconfig ESP_WOLFSSL_ENABLE_MLKEM triggers settings in user_setting.h */
+    ESP_LOGI(TAG, "Espressif CONFIG_ESP_WOLFSSL_ENABLE_MLKEM is defined");
+#endif
+#if defined(WOLFSSL_HAVE_MLKEM)
+    ESP_LOGI(TAG, "WOLFSSL_MLKEM_KYBER is defined");
+    #if defined(WOLFSSL_KYBER1024) || !defined(WOLFSSL_NO_ML_KEM_1024)
+        #if defined(WOLFSSL_MLKEM_KYBER)
+            ESP_LOGW(TAG, "WOLFSSL_MLKEM_KYBER is enabled, setting key share: "
+                                        "WOLFSSL_P521_KYBER_LEVEL5");
+            ret_i = wolfSSL_UseKeyShare(ssl, WOLFSSL_P521_KYBER_LEVEL5);
+        #else
+            ESP_LOGI(TAG, "WOLFSSL_HAVE_MLKEM is enabled, setting key share: "
+                                        "WOLFSSL_ML_KEM_1024");
+            ESP_LOGW(TAG, "Note: Wireshark as of 4.4.6 reports as frodo976aes");
+            ret_i = wolfSSL_UseKeyShare(ssl, WOLFSSL_ML_KEM_1024);
+        #endif
+    #elif defined(WOLFSSL_KYBER768) || !defined(WOLFSSL_NO_ML_KEM_768)
+        #if defined(WOLFSSL_MLKEM_KYBER)
+            ESP_LOGW(TAG, "WOLFSSL_MLKEM_KYBER is enabled, setting key share: "
+                                        "WOLFSSL_P256_KYBER_LEVEL3");
+            ret_i = wolfSSL_UseKeyShare(ssl, WOLFSSL_P256_KYBER_LEVEL3);
+        #else
+            ESP_LOGI(TAG, "WOLFSSL_HAVE_MLKEM is enabled, setting key share: "
+                                        "WOLFSSL_ML_KEM_768");
+            ESP_LOGW(TAG, "Note: Wireshark as of 4.4.6 reports as frodo976aes");
+            ret_i = wolfSSL_UseKeyShare(ssl, WOLFSSL_ML_KEM_768);
+        #endif
+    #elif defined(WOLFSSL_KYBER512) || !defined(WOLFSSL_NO_ML_KEM_512)
+        /* This will typically be a low memory situation, such as ESP8266 */
+        #if defined(WOLFSSL_MLKEM_KYBER)
+            ESP_LOGW(TAG, "WOLFSSL_MLKEM_KYBER is enabled, setting key share: "
+                                        "WOLFSSL_P256_KYBER_LEVEL1");
+            ret_i = wolfSSL_UseKeyShare(ssl, WOLFSSL_P256_KYBER_LEVEL1);
+        #else
+            ESP_LOGI(TAG, "WOLFSSL_HAVE_MLKEM is enabled, setting key share: "
+                                        "WOLFSSL_ML_KEM_512");
+            ESP_LOGW(TAG, "Note: Wireshark as of 4.4.6 reports as frodo976aes");
+            ret_i = wolfSSL_UseKeyShare(ssl, WOLFSSL_ML_KEM_512);
+        #endif
+    #else
+        ESP_LOGW(TAG, "WOLFSSL_HAVE_MLKEM enabled but no key size available.");
+        ret_i = ESP_FAIL;
+    #endif
+        if (ret_i == WOLFSSL_SUCCESS) {
+            ESP_LOGI(TAG, "UseKeyShare Kyber success");
+        }
+        else {
+            ESP_LOGE(TAG, "UseKeyShare Kyber failed");
+        }
+#else
+    ESP_LOGI(TAG, "WOLFSSL_HAVE_MLKEM is not enabled");
 #endif
     }
 
@@ -396,7 +474,11 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
     atmel_set_slot_allocator(my_atmel_alloc, my_atmel_free);
     #endif
 #endif
-
+#ifdef DEBUG_WOLFSSL
+        this_heap = esp_get_free_heap_size();
+        ESP_LOGI(TAG, "tls_smp_client_task heap(2) @ %p = %d",
+                      &this_heap, this_heap);
+#endif
     /* Attach wolfSSL to the socket */
     ret_i = wolfSSL_set_fd(ssl, sockfd);
     if (ret_i == WOLFSSL_SUCCESS) {
@@ -406,42 +488,89 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
         ESP_LOGE(TAG, "ERROR: failed wolfSSL_set_fd. Error: %d\n", ret_i);
     }
 
-    WOLFSSL_MSG("Connect to wolfSSL on the server side");
-    /* Connect to wolfSSL on the server side */
+    ESP_LOGI(TAG, "Connect to wolfSSL server...");
+    #ifdef DEBUG_WOLFSSL
+        wolfSSL_Debugging_ON();
+    #endif
     ret_i = wolfSSL_connect(ssl);
-    if (wolfSSL_connect(ssl) == SSL_SUCCESS) {
+#ifdef DEBUG_WOLFSSL
+    this_heap = esp_get_free_heap_size();
+    ESP_LOGI(TAG, "tls_smp_client_task heap(3) @ %p = %d",
+                    &this_heap, this_heap);
+#endif
+    if (ret_i == WOLFSSL_SUCCESS) {
 #ifdef DEBUG_WOLFSSL
         ShowCiphers(ssl);
 #endif
+        ESP_LOGI(TAG, "Connect success! Sending message...");
         /* Get a message for the server from stdin */
         WOLFSSL_MSG("Message for server: ");
         memset(buff, 0, sizeof(buff));
 
         if (sendGet) {
-            printf("SSL connect ok, sending GET...\n");
             len = XSTRLEN(sndMsg);
             strncpy(buff, sndMsg, len);
-            buff[len] = '\0';
         }
         else {
-            sprintf(buff, "message from esp32 tls client\n");
+            sprintf(buff, "Hello from Espressif wolfSSL TLS client!\n");
             len = strnlen(buff, sizeof(buff));
         }
+        buff[len] = '\0';
+        ESP_LOGI(TAG, "SSL connect ok, sending message:\n\n%s\n", buff);
+
         /* Send the message to the server */
-        if (wolfSSL_write(ssl, buff, len) != len) {
+        do {
+            err = 0; /* reset error */
+            ret_i = wolfSSL_write(ssl, buff, len);
+            if (ret_i <= 0) {
+                err = wolfSSL_get_error(ssl, 0);
+            }
+        } while (err == WOLFSSL_ERROR_WANT_WRITE ||
+                 err == WOLFSSL_ERROR_WANT_READ);
+
+        if (ret_i != len) {
             ESP_LOGE(TAG, "ERROR: failed to write\n");
+        }
+        else {
+            ESP_LOGI(TAG, "Message sent! Awaiting response...");
         }
 
         /* Read the server data into our buff array */
         memset(buff, 0, sizeof(buff));
-        if (wolfSSL_read(ssl, buff, sizeof(buff) - 1) == -1) {
+
+        do {
+            err = 0; /* reset error */
+            ret_i =wolfSSL_read(ssl, buff, sizeof(buff));
+            if (ret_i <= 0) {
+                err = wolfSSL_get_error(ssl, 0);
+            }
+        } while ((err == WOLFSSL_ERROR_WANT_READ) ||
+                 (err == WOLFSSL_ERROR_WANT_WRITE) );
+
+        if (ret_i < 0) {
             ESP_LOGE(TAG, "ERROR: failed to read\n");
         }
 
-        /* Print to stdout any data the server sends */
-        printf("Server: ");
-        printf("%s\n", buff);
+        /* Show any data the server sends */
+        ESP_LOGI(TAG, "Server response: \n\n%s\n", buff);
+
+        ret_i = wolfSSL_shutdown(ssl);
+        while (ret_i == WOLFSSL_SHUTDOWN_NOT_DONE) {
+            ret_i = wolfSSL_shutdown(ssl); /* bidirectional shutdown */
+            if (ret_i == WOLFSSL_SUCCESS) {
+                ESP_LOGI(TAG, "Bidirectional shutdown complete\n");
+                break;
+            }
+            else if (ret_i != WOLFSSL_SHUTDOWN_NOT_DONE) {
+                ESP_LOGE(TAG, "Bidirectional shutdown failed\n");
+                break;
+            }
         }
+        if (ret_i != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "Bidirectional shutdown failed\n");
+        }
+
+    } /* wolfSSL_connect(ssl) == WOLFSSL_SUCCESS) */
     else {
         ESP_LOGE(TAG, "ERROR: failed to connect to wolfSSL. "
                       "Error: %d\n", ret_i);
@@ -450,8 +579,8 @@ WOLFSSL_ESP_TASK tls_smp_client_task(void* args)
     ShowCiphers(ssl);
 #endif
 
-    /* Cleanup and return */
-    wolfSSL_free(ssl);     /* Free the wolfSSL object                  */
+    ESP_LOGI(TAG, "Cleanup and exit");
+    wolfSSL_free(ssl);     /* Release the wolfSSL object memory        */
     wolfSSL_CTX_free(ctx); /* Free the wolfSSL context object          */
     wolfSSL_Cleanup();     /* Cleanup the wolfSSL environment          */
     close(sockfd);         /* Close the connection to the server       */
@@ -473,10 +602,10 @@ WOLFSSL_ESP_TASK tls_smp_client_init(void* args)
 #else
     xTaskHandle _handle;
 #endif
-    /* See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/freertos_idf.html#functions  */
+    /* See Espressif api-reference/system/freertos_idf.html#functions  */
     if (TLS_SMP_CLIENT_TASK_BYTES < (6 * 1024)) {
         /* Observed approximately 6KB limit for the RTOS task stack size.
-         * Reminder parameter is bytes, not words as with generic FreeeRTOS. */
+         * Reminder parameter is bytes, not words as with generic FreeRTOS. */
         ESP_LOGW(TAG, "Warning: TLS_SMP_CLIENT_TASK_BYTES < 6KB");
     }
 #ifndef WOLFSSL_SMALL_STACK
@@ -485,7 +614,7 @@ WOLFSSL_ESP_TASK tls_smp_client_init(void* args)
 #endif
 
     /* Note that despite vanilla FreeRTOS using WORDS for a parameter,
-     * Espressif uses BYTES for the task stack size here: */
+     * Espressif uses BYTES for the task stack size here. */
     ret = xTaskCreate(tls_smp_client_task,
                       TLS_SMP_CLIENT_TASK_NAME,
                       TLS_SMP_CLIENT_TASK_BYTES,
