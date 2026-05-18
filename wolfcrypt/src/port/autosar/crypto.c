@@ -1,12 +1,12 @@
 /* crypto.c
  *
- * Copyright (C) 2006-2024 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -25,12 +25,12 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
-#include <wolfssl/wolfcrypt/port/autosar/Csm.h>
-#include <wolfssl/wolfcrypt/port/autosar/Crypto.h>
 
 #ifdef WOLFSSL_AUTOSAR
 #ifndef NO_WOLFSSL_AUTOSAR_CRYPTO
 
+#include <wolfssl/wolfcrypt/port/autosar/Csm.h>
+#include <wolfssl/wolfcrypt/port/autosar/Crypto.h>
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/aes.h>
 #include <wolfssl/wolfcrypt/random.h>
@@ -101,7 +101,7 @@ static int GetKey(Crypto_JobType* job, uint32 eId, uint8 **key, uint32 *keySz)
     }
 
     /* @TODO sanity checks on setup... uint8 redirectionConfig; */
-    switch (eid) {
+    switch (eId) {
         case job->jobRedirectionInfoRef->inputKeyElementId:
             if (job->jobRedirectionInfoRef->inputKeyId >= MAX_KEYSTORE) {
                 WOLFSSL_MSG("Bogus input key ID redirection (too large)");
@@ -148,6 +148,7 @@ static int GetKey(Crypto_JobType* job, uint32 eId, uint8 **key, uint32 *keySz)
             /* found matching key available, use it */
             *key = keyStore[i].key;
             *keySz = keyStore[i].keyLen;
+            break;
         }
     }
 #endif
@@ -193,6 +194,8 @@ static Aes* NewAesStruct(Crypto_JobType* job)
             ret = wc_AesInit(&activeJobs[i].aes, NULL, INVALID_DEVID);
             if (ret != 0) {
                 WOLFSSL_MSG("Error initializing AES structure");
+                activeJobs[i].inUse = 0;
+                activeJobs[i].jobId = 0;
                 return NULL;
             }
             return &activeJobs[i].aes;
@@ -250,7 +253,7 @@ Std_ReturnType wolfSSL_Crypto_CBC(Crypto_JobType* job)
             return E_NOT_OK;
         }
 
-        if (iv != NULL && ivSz < AES_BLOCK_SIZE) {
+        if (iv != NULL && ivSz < WC_AES_BLOCK_SIZE) {
             WOLFSSL_MSG("Error IV is too small");
             return E_NOT_OK;
         }
@@ -262,10 +265,10 @@ Std_ReturnType wolfSSL_Crypto_CBC(Crypto_JobType* job)
         }
 
         if (wc_AesSetKey(aes, key, keySz, iv, encrypt) != 0) {
+            FreeAesStruct(job);
             WOLFSSL_MSG("Crypto error setting up AES key");
             return E_NOT_OK;
         }
-        ForceZero(key, keySz);
     }
 
     if ((job->jobPrimitiveInputOutput.mode & CRYPTO_OPERATIONMODE_UPDATE)
@@ -348,24 +351,12 @@ Std_ReturnType wolfSSL_Crypto_RNG(Crypto_JobType* job)
         return E_NOT_OK;
     }
 
-    if (rngInit == 1) {
-        if (wc_LockMutex(&rngMutex) != 0) {
-            WOLFSSL_MSG("Error locking RNG mutex");
-            return E_NOT_OK;
-        }
+    if (wc_LockMutex(&rngMutex) != 0) {
+        WOLFSSL_MSG("Error locking RNG mutex");
+        return E_NOT_OK;
     }
 
     if (rngInit == 0) {
-        if (wc_InitMutex(&rngMutex) != 0) {
-            WOLFSSL_MSG("Error initializing RNG mutex");
-            return E_NOT_OK;
-        }
-
-        if (wc_LockMutex(&rngMutex) != 0) {
-            WOLFSSL_MSG("Error locking RNG mutex");
-            return E_NOT_OK;
-        }
-
         ret = wc_InitRng_ex(&rng, NULL, 0);
         if (ret != 0) {
             WOLFSSL_MSG("Error initializing RNG");
@@ -431,7 +422,7 @@ Std_ReturnType Crypto_ProcessJob(uint32 objectId, Crypto_JobType* job)
                 break;
 
             default:
-                WOLFSSL_MSG("Unsuported Crypto service");
+                WOLFSSL_MSG("Unsupported Crypto service");
                 ret = E_NOT_OK;
                 break;
         }
@@ -449,6 +440,10 @@ void Crypto_Init(const Crypto_ConfigType* config)
     if (wc_InitMutex(&crypto_mutex) != 0) {
         WOLFSSL_MSG("Issues setting up crypto mutex");
     }
+    if (wc_InitMutex(&rngMutex) != 0) {
+        WOLFSSL_MSG("Error initializing RNG mutex");
+    }
+
     XMEMSET(&keyStore, 0, MAX_KEYSTORE * sizeof(Keys));
     XMEMSET(&activeJobs, 0, MAX_JOBS * sizeof(Jobs));
     (void)config;

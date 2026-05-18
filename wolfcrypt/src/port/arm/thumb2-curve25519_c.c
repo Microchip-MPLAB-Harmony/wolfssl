@@ -1,12 +1,12 @@
 /* thumb2-curve25519
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -21,25 +21,16 @@
 
 /* Generated using (from wolfssl):
  *   cd ../scripts
- *   ruby ./x25519/x25519.rb thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-curve25519.c
+ *   ruby ./x25519/x25519.rb \
+ *       thumb2 ../wolfssl/wolfcrypt/src/port/arm/thumb2-curve25519.c
  */
 
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/libwolfssl_sources_asm.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef WOLFSSL_ARMASM
-#if !defined(__aarch64__) && defined(__thumb__)
-#include <stdint.h>
-#ifdef HAVE_CONFIG_H
-    #include <config.h>
-#endif /* HAVE_CONFIG_H */
-#include <wolfssl/wolfcrypt/settings.h>
+#ifdef WOLFSSL_ARMASM_THUMB2
 #ifdef WOLFSSL_ARMASM_INLINE
-
-#ifdef WOLFSSL_ARMASM
-#if !defined(__aarch64__) && defined(__thumb__)
 
 #ifdef __IAR_SYSTEMS_ICC__
 #define __asm__        asm
@@ -50,6 +41,7 @@
 #define __asm__        __asm
 #define __volatile__   volatile
 #endif /* __KEIL__ */
+
 /* Based on work by: Emil Lenngren
  * https://github.com/pornin/X25519-Cortex-M4
  */
@@ -62,9 +54,9 @@
 #if !defined(CURVE25519_SMALL) || !defined(ED25519_SMALL)
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_init()
+WC_OMIT_FRAME_POINTER void fe_init()
 #else
-void fe_init()
+WC_OMIT_FRAME_POINTER void fe_init()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -79,9 +71,9 @@ void fe_init()
 
 void fe_add_sub_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_add_sub_op()
+WC_OMIT_FRAME_POINTER void fe_add_sub_op()
 #else
-void fe_add_sub_op()
+WC_OMIT_FRAME_POINTER void fe_add_sub_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -176,15 +168,15 @@ void fe_add_sub_op()
         /* Done Add-Sub */
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
 void fe_sub_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sub_op()
+WC_OMIT_FRAME_POINTER void fe_sub_op()
 #else
-void fe_sub_op()
+WC_OMIT_FRAME_POINTER void fe_sub_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -217,14 +209,14 @@ void fe_sub_op()
         /* Done Sub */
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sub(fe r_p, const fe a_p, const fe b_p)
+WC_OMIT_FRAME_POINTER void fe_sub(fe r_p, const fe a_p, const fe b_p)
 #else
-void fe_sub(fe r, const fe a, const fe b)
+WC_OMIT_FRAME_POINTER void fe_sub(fe r, const fe a, const fe b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -237,15 +229,16 @@ void fe_sub(fe r, const fe a, const fe b)
         "BL	fe_sub_op\n\t"
         : [r] "+r" (r), [a] "+r" (a), [b] "+r" (b)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 void fe_add_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_add_op()
+WC_OMIT_FRAME_POINTER void fe_add_op()
 #else
-void fe_add_op()
+WC_OMIT_FRAME_POINTER void fe_add_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -278,14 +271,14 @@ void fe_add_op()
         /* Done Add */
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_add(fe r_p, const fe a_p, const fe b_p)
+WC_OMIT_FRAME_POINTER void fe_add(fe r_p, const fe a_p, const fe b_p)
 #else
-void fe_add(fe r, const fe a, const fe b)
+WC_OMIT_FRAME_POINTER void fe_add(fe r, const fe a, const fe b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -298,20 +291,22 @@ void fe_add(fe r, const fe a, const fe b)
         "BL	fe_add_op\n\t"
         : [r] "+r" (r), [a] "+r" (a), [b] "+r" (b)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
-#ifdef HAVE_ED25519
+#if defined(HAVE_ED25519) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_frombytes(fe out_p, const unsigned char* in_p)
+WC_OMIT_FRAME_POINTER void fe_frombytes(fe out_p, const unsigned char* in_p)
 #else
-void fe_frombytes(fe out, const unsigned char* in)
+WC_OMIT_FRAME_POINTER void fe_frombytes(fe out, const unsigned char* in)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register sword32* out __asm__ ("r0") = (sword32*)out_p;
-    register const unsigned char* in __asm__ ("r1") = (const unsigned char*)in_p;
+    register const unsigned char* in __asm__ ("r1") =
+        (const unsigned char*)in_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -334,14 +329,14 @@ void fe_frombytes(fe out, const unsigned char* in)
         "STR	r9, [%[out], #28]\n\t"
         : [out] "+r" (out), [in] "+r" (in)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_tobytes(unsigned char* out_p, const fe n_p)
+WC_OMIT_FRAME_POINTER void fe_tobytes(unsigned char* out_p, const fe n_p)
 #else
-void fe_tobytes(unsigned char* out, const fe n)
+WC_OMIT_FRAME_POINTER void fe_tobytes(unsigned char* out, const fe n)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -380,14 +375,14 @@ void fe_tobytes(unsigned char* out, const fe n)
         "STR	r9, [%[out], #28]\n\t"
         : [out] "+r" (out), [n] "+r" (n)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_1(fe n_p)
+WC_OMIT_FRAME_POINTER void fe_1(fe n_p)
 #else
-void fe_1(fe n)
+WC_OMIT_FRAME_POINTER void fe_1(fe n)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -407,14 +402,14 @@ void fe_1(fe n)
         "STM	%[n], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         : [n] "+r" (n)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_0(fe n_p)
+WC_OMIT_FRAME_POINTER void fe_0(fe n_p)
 #else
-void fe_0(fe n)
+WC_OMIT_FRAME_POINTER void fe_0(fe n)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -434,14 +429,14 @@ void fe_0(fe n)
         "STM	%[n], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         : [n] "+r" (n)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_copy(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_copy(fe r_p, const fe a_p)
 #else
-void fe_copy(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_copy(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -461,14 +456,14 @@ void fe_copy(fe r, const fe a)
         "STRD	r4, r5, [%[r], #24]\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "r2", "r3", "r4", "r5", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_neg(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_neg(fe r_p, const fe a_p)
 #else
-void fe_neg(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_neg(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -494,14 +489,14 @@ void fe_neg(fe r, const fe a)
         "STM	%[r]!, {r2, r3, r4, r5}\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-int fe_isnonzero(const fe a_p)
+WC_OMIT_FRAME_POINTER int fe_isnonzero(const fe a_p)
 #else
-int fe_isnonzero(const fe a)
+WC_OMIT_FRAME_POINTER int fe_isnonzero(const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -538,15 +533,16 @@ int fe_isnonzero(const fe a)
         "ORR	%[a], r2, r4\n\t"
         : [a] "+r" (a)
         :
-        : "memory", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "cc"
+        : "memory", "cc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
+            "r10"
     );
-    return (uint32_t)(size_t)a;
+    return (word32)(size_t)a;
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-int fe_isnegative(const fe a_p)
+WC_OMIT_FRAME_POINTER int fe_isnegative(const fe a_p)
 #else
-int fe_isnegative(const fe a)
+WC_OMIT_FRAME_POINTER int fe_isnegative(const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -570,22 +566,23 @@ int fe_isnegative(const fe a)
         "EOR	%[a], %[a], r1\n\t"
         : [a] "+r" (a)
         :
-        : "memory", "r1", "r2", "r3", "r4", "r5", "cc"
+        : "memory", "cc", "r1", "r2", "r3", "r4", "r5"
     );
-    return (uint32_t)(size_t)a;
+    return (word32)(size_t)a;
 }
 
-#if defined(HAVE_ED25519_MAKE_KEY) || defined(HAVE_ED25519_SIGN)
+#if defined(HAVE_ED25519_MAKE_KEY) || defined(HAVE_ED25519_SIGN) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 #ifndef WC_NO_CACHE_RESISTANT
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_cmov_table(fe* r_p, fe* base_p, signed char b_p)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, const fe* base_p,
+    signed char b_p)
 #else
-void fe_cmov_table(fe* r, fe* base, signed char b)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, const fe* base, signed char b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register fe* r __asm__ ("r0") = (fe*)r_p;
-    register fe* base __asm__ ("r1") = (fe*)base_p;
+    register const fe* base __asm__ ("r1") = (const fe*)base_p;
     register signed char b __asm__ ("r2") = (signed char)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
@@ -1555,20 +1552,22 @@ void fe_cmov_table(fe* r, fe* base, signed char b)
         "STRD	r8, r9, [%[r], #88]\n\t"
         : [r] "+r" (r), [base] "+r" (base), [b] "+r" (b)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r3", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r3", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_cmov_table(fe* r_p, fe* base_p, signed char b_p)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, const fe* base_p,
+    signed char b_p)
 #else
-void fe_cmov_table(fe* r, fe* base, signed char b)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, const fe* base, signed char b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register fe* r __asm__ ("r0") = (fe*)r_p;
-    register fe* base __asm__ ("r1") = (fe*)base_p;
+    register const fe* base __asm__ ("r1") = (const fe*)base_p;
     register signed char b __asm__ ("r2") = (signed char)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
@@ -1667,19 +1666,20 @@ void fe_cmov_table(fe* r, fe* base, signed char b)
         "SUB	%[base], %[base], %[b]\n\t"
         : [r] "+r" (r), [base] "+r" (base), [b] "+r" (b)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #endif /* WC_NO_CACHE_RESISTANT */
-#endif /* HAVE_ED25519_MAKE_KEY || HAVE_ED25519_SIGN */
-#endif /* HAVE_ED25519 */
-#ifdef WOLFSSL_SP_NO_UMAAL
+#endif /* HAVE_ED25519_MAKE_KEY || HAVE_ED25519_SIGN || WOLFSSL_CURVE25519_USE_ED25519 */
+#endif /* HAVE_ED25519 || WOLFSSL_CURVE25519_USE_ED25519 */
+#ifdef WOLFSSL_ARM_ARCH_7M
 void fe_mul_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_mul_op()
+WC_OMIT_FRAME_POINTER void fe_mul_op()
 #else
-void fe_mul_op()
+WC_OMIT_FRAME_POINTER void fe_mul_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2056,16 +2056,16 @@ void fe_mul_op()
         "ADD	sp, sp, #0x28\n\t"
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
 #else
 void fe_mul_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_mul_op()
+WC_OMIT_FRAME_POINTER void fe_mul_op()
 #else
-void fe_mul_op()
+WC_OMIT_FRAME_POINTER void fe_mul_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2196,15 +2196,15 @@ void fe_mul_op()
         "ADD	sp, sp, #0x10\n\t"
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_mul(fe r_p, const fe a_p, const fe b_p)
+WC_OMIT_FRAME_POINTER void fe_mul(fe r_p, const fe a_p, const fe b_p)
 #else
-void fe_mul(fe r, const fe a, const fe b)
+WC_OMIT_FRAME_POINTER void fe_mul(fe r, const fe a, const fe b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2217,16 +2217,17 @@ void fe_mul(fe r, const fe a, const fe b)
         "BL	fe_mul_op\n\t"
         : [r] "+r" (r), [a] "+r" (a), [b] "+r" (b)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 void fe_sq_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sq_op()
+WC_OMIT_FRAME_POINTER void fe_sq_op()
 #else
-void fe_sq_op()
+WC_OMIT_FRAME_POINTER void fe_sq_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2496,16 +2497,16 @@ void fe_sq_op()
         "ADD	sp, sp, #0x44\n\t"
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
 #else
 void fe_sq_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sq_op()
+WC_OMIT_FRAME_POINTER void fe_sq_op()
 #else
-void fe_sq_op()
+WC_OMIT_FRAME_POINTER void fe_sq_op()
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2622,15 +2623,15 @@ void fe_sq_op()
         "STM	lr, {r0, r1, r2, r3, r4, r5, r6, r7}\n\t"
         :
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sq(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_sq(fe r_p, const fe a_p)
 #else
-void fe_sq(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_sq(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2642,16 +2643,17 @@ void fe_sq(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #ifdef HAVE_CURVE25519
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_mul121666(fe r_p, fe a_p)
+WC_OMIT_FRAME_POINTER void fe_mul121666(fe r_p, fe a_p)
 #else
-void fe_mul121666(fe r, fe a)
+WC_OMIT_FRAME_POINTER void fe_mul121666(fe r, fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2702,15 +2704,16 @@ void fe_mul121666(fe r, fe a)
         "STM	%[r], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12"
     );
 }
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_mul121666(fe r_p, fe a_p)
+WC_OMIT_FRAME_POINTER void fe_mul121666(fe r_p, fe a_p)
 #else
-void fe_mul121666(fe r, fe a)
+WC_OMIT_FRAME_POINTER void fe_mul121666(fe r, fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2748,16 +2751,18 @@ void fe_mul121666(fe r, fe a)
         "STM	%[r], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12"
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WC_NO_CACHE_RESISTANT
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-int curve25519(byte* r_p, const byte* n_p, const byte* a_p)
+WC_OMIT_FRAME_POINTER int curve25519(byte* r_p, const byte* n_p,
+    const byte* a_p)
 #else
-int curve25519(byte* r, const byte* n, const byte* a)
+WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -2796,9 +2801,17 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "MOV	%[a], #0x1c\n\t"
         "STR	%[a], [sp, #176]\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_words:\n\t"
+#else
+    "L_curve25519_words_%=:\n\t"
+#endif
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_bits:\n\t"
+#else
+    "L_curve25519_bits_%=:\n\t"
+#endif
         "LDR	%[n], [sp, #164]\n\t"
         "LDR	%[a], [%[n], r2]\n\t"
         "LDR	%[n], [sp, #180]\n\t"
@@ -2978,19 +2991,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "LDR	%[n], [sp, #180]\n\t"
         "SUBS	%[n], %[n], #0x1\n\t"
         "STR	%[n], [sp, #180]\n\t"
-#ifdef __GNUC__
-        "BGE	L_curve25519_bits\n\t"
-#else
+#if defined(__GNUC__)
+        "BGE	L_curve25519_bits_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BGE.W	L_curve25519_bits\n\t"
+#else
+        "BGE.W	L_curve25519_bits_%=\n\t"
 #endif
         "MOV	%[n], #0x1f\n\t"
         "STR	%[n], [sp, #180]\n\t"
         "SUBS	%[a], %[a], #0x4\n\t"
         "STR	%[a], [sp, #176]\n\t"
-#ifdef __GNUC__
-        "BGE	L_curve25519_words\n\t"
-#else
+#if defined(__GNUC__)
+        "BGE	L_curve25519_words_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BGE.W	L_curve25519_words\n\t"
+#else
+        "BGE.W	L_curve25519_words_%=\n\t"
 #endif
         /* Invert */
         "ADD	r1, sp, #0x0\n\t"
@@ -3022,17 +3039,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_1:\n\t"
+#else
+    "L_curve25519_inv_1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_1\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_1\n\t"
+#else
+        "BNE.N	L_curve25519_inv_1_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3043,17 +3066,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_2:\n\t"
+#else
+    "L_curve25519_inv_2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_2\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_2\n\t"
+#else
+        "BNE.N	L_curve25519_inv_2_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3064,17 +3093,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_3:\n\t"
+#else
+    "L_curve25519_inv_3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_3\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_3\n\t"
+#else
+        "BNE.N	L_curve25519_inv_3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3082,17 +3117,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_4:\n\t"
+#else
+    "L_curve25519_inv_4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_4\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_4\n\t"
+#else
+        "BNE.N	L_curve25519_inv_4_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3103,17 +3144,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_5:\n\t"
+#else
+    "L_curve25519_inv_5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_5\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_5\n\t"
+#else
+        "BNE.N	L_curve25519_inv_5_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3124,17 +3171,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_6:\n\t"
+#else
+    "L_curve25519_inv_6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_6\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_6\n\t"
+#else
+        "BNE.N	L_curve25519_inv_6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3142,17 +3195,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_7:\n\t"
+#else
+    "L_curve25519_inv_7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_7\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_7\n\t"
+#else
+        "BNE.N	L_curve25519_inv_7_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3160,17 +3219,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x5\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_8:\n\t"
+#else
+    "L_curve25519_inv_8_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_8\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_8\n\t"
+#else
+        "BNE.N	L_curve25519_inv_8_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3184,16 +3249,18 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "ADD	sp, sp, #0xbc\n\t"
         : [r] "+r" (r), [n] "+r" (n), [a] "+r" (a)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r3", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r3", "r12", "lr"
     );
-    return (uint32_t)(size_t)r;
+    return (word32)(size_t)r;
 }
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-int curve25519(byte* r_p, const byte* n_p, const byte* a_p)
+WC_OMIT_FRAME_POINTER int curve25519(byte* r_p, const byte* n_p,
+    const byte* a_p)
 #else
-int curve25519(byte* r, const byte* n, const byte* a)
+WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -3234,7 +3301,11 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "STM	r3, {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
         "MOV	%[a], #0xfe\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_bits:\n\t"
+#else
+    "L_curve25519_bits_%=:\n\t"
+#endif
         "STR	%[a], [sp, #168]\n\t"
         "LDR	%[n], [sp, #160]\n\t"
         "AND	r4, %[a], #0x1f\n\t"
@@ -3319,12 +3390,14 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "LDR	%[a], [sp, #168]\n\t"
         "SUBS	%[a], %[a], #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BGE	L_curve25519_bits\n\t"
-#else
+#if defined(__GNUC__)
+        "BGE	L_curve25519_bits_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BGE.N	L_curve25519_bits\n\t"
+#else
+        "BGE.N	L_curve25519_bits_%=\n\t"
 #endif
-        /*   Cycle Count: 171 */
+        /*   Cycle Count: 166 */
         "LDR	%[n], [sp, #184]\n\t"
         /* Copy */
         "LDM	r1, {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
@@ -3359,17 +3432,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_1:\n\t"
+#else
+    "L_curve25519_inv_1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_1\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_1\n\t"
+#else
+        "BNE.N	L_curve25519_inv_1_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3380,17 +3459,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_2:\n\t"
+#else
+    "L_curve25519_inv_2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_2\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_2\n\t"
+#else
+        "BNE.N	L_curve25519_inv_2_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3401,17 +3486,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_3:\n\t"
+#else
+    "L_curve25519_inv_3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_3\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_3\n\t"
+#else
+        "BNE.N	L_curve25519_inv_3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3419,17 +3510,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_4:\n\t"
+#else
+    "L_curve25519_inv_4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_4\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_4\n\t"
+#else
+        "BNE.N	L_curve25519_inv_4_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3440,17 +3537,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_5:\n\t"
+#else
+    "L_curve25519_inv_5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_5\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_5\n\t"
+#else
+        "BNE.N	L_curve25519_inv_5_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3461,17 +3564,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_6:\n\t"
+#else
+    "L_curve25519_inv_6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x80\n\t"
         "ADD	r0, sp, #0x80\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_6\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_6\n\t"
+#else
+        "BNE.N	L_curve25519_inv_6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x60\n\t"
         "ADD	r1, sp, #0x80\n\t"
@@ -3479,17 +3588,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_7:\n\t"
+#else
+    "L_curve25519_inv_7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_7\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_7\n\t"
+#else
+        "BNE.N	L_curve25519_inv_7_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3497,17 +3612,23 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x5\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_curve25519_inv_8:\n\t"
+#else
+    "L_curve25519_inv_8_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_curve25519_inv_8\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_curve25519_inv_8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_curve25519_inv_8\n\t"
+#else
+        "BNE.N	L_curve25519_inv_8_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3536,18 +3657,19 @@ int curve25519(byte* r, const byte* n, const byte* a)
         "ADD	sp, sp, #0xc0\n\t"
         : [r] "+r" (r), [n] "+r" (n), [a] "+r" (a)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r3", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r3", "r12", "lr"
     );
-    return (uint32_t)(size_t)r;
+    return (word32)(size_t)r;
 }
 
 #endif /* WC_NO_CACHE_RESISTANT */
 #endif /* HAVE_CURVE25519 */
-#ifdef HAVE_ED25519
+#if defined(HAVE_ED25519) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_invert(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_invert(fe r_p, const fe a_p)
 #else
-void fe_invert(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -3589,17 +3711,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert1:\n\t"
+#else
+    "L_fe_invert1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert1\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert1\n\t"
+#else
+        "BNE.N	L_fe_invert1_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3610,17 +3738,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert2:\n\t"
+#else
+    "L_fe_invert2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert2\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert2\n\t"
+#else
+        "BNE.N	L_fe_invert2_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3631,17 +3765,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert3:\n\t"
+#else
+    "L_fe_invert3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert3\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert3\n\t"
+#else
+        "BNE.N	L_fe_invert3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3649,17 +3789,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert4:\n\t"
+#else
+    "L_fe_invert4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert4\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert4\n\t"
+#else
+        "BNE.N	L_fe_invert4_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3670,17 +3816,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert5:\n\t"
+#else
+    "L_fe_invert5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert5\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert5\n\t"
+#else
+        "BNE.N	L_fe_invert5_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3691,17 +3843,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert6:\n\t"
+#else
+    "L_fe_invert6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x60\n\t"
         "ADD	r0, sp, #0x60\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert6\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert6\n\t"
+#else
+        "BNE.N	L_fe_invert6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x40\n\t"
         "ADD	r1, sp, #0x60\n\t"
@@ -3709,17 +3867,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert7:\n\t"
+#else
+    "L_fe_invert7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert7\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert7\n\t"
+#else
+        "BNE.N	L_fe_invert7_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -3727,17 +3891,23 @@ void fe_invert(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x5\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_invert8:\n\t"
+#else
+    "L_fe_invert8_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_invert8\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_invert8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_invert8\n\t"
+#else
+        "BNE.N	L_fe_invert8_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -3748,15 +3918,16 @@ void fe_invert(fe r, const fe a)
         "ADD	sp, sp, #0x88\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "lr", "r12", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "cc"
+        : "memory", "cc", "lr", "r12", "r2", "r3", "r4", "r5", "r6", "r7", "r8",
+            "r9", "r10", "r11"
     );
 }
 
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sq2(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_sq2(fe r_p, const fe a_p)
 #else
-void fe_sq2(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4062,15 +4233,15 @@ void fe_sq2(fe r, const fe a)
         "ADD	sp, sp, #0x44\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_sq2(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_sq2(fe r_p, const fe a_p)
 #else
-void fe_sq2(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4225,15 +4396,15 @@ void fe_sq2(fe r, const fe a)
         "MOV	r1, lr\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "lr", "cc"
+        : "memory", "cc", "lr"
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void fe_pow22523(fe r_p, const fe a_p)
+WC_OMIT_FRAME_POINTER void fe_pow22523(fe r_p, const fe a_p)
 #else
-void fe_pow22523(fe r, const fe a)
+WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4275,17 +4446,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x4\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_1:\n\t"
+#else
+    "L_fe_pow22523_1_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_1\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_1_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_1\n\t"
+#else
+        "BNE.N	L_fe_pow22523_1_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4296,17 +4473,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x9\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_2:\n\t"
+#else
+    "L_fe_pow22523_2_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_2\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_2_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_2\n\t"
+#else
+        "BNE.N	L_fe_pow22523_2_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4317,17 +4500,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x13\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_3:\n\t"
+#else
+    "L_fe_pow22523_3_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_3\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_3_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_3\n\t"
+#else
+        "BNE.N	L_fe_pow22523_3_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -4335,17 +4524,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0xa\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_4:\n\t"
+#else
+    "L_fe_pow22523_4_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_4\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_4_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_4\n\t"
+#else
+        "BNE.N	L_fe_pow22523_4_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4356,17 +4551,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x31\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_5:\n\t"
+#else
+    "L_fe_pow22523_5_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_5\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_5_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_5\n\t"
+#else
+        "BNE.N	L_fe_pow22523_5_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4377,17 +4578,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_sq_op\n\t"
         "MOV	r12, #0x63\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_6:\n\t"
+#else
+    "L_fe_pow22523_6_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x40\n\t"
         "ADD	r0, sp, #0x40\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_6\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_6_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_6\n\t"
+#else
+        "BNE.N	L_fe_pow22523_6_%=\n\t"
 #endif
         "ADD	r2, sp, #0x20\n\t"
         "ADD	r1, sp, #0x40\n\t"
@@ -4395,17 +4602,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x32\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_7:\n\t"
+#else
+    "L_fe_pow22523_7_%=:\n\t"
+#endif
         "ADD	r1, sp, #0x20\n\t"
         "ADD	r0, sp, #0x20\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_7\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_7_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_7\n\t"
+#else
+        "BNE.N	L_fe_pow22523_7_%=\n\t"
 #endif
         "MOV	r2, sp\n\t"
         "ADD	r1, sp, #0x20\n\t"
@@ -4413,17 +4626,23 @@ void fe_pow22523(fe r, const fe a)
         "BL	fe_mul_op\n\t"
         "MOV	r12, #0x2\n\t"
         "\n"
+#if defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
     "L_fe_pow22523_8:\n\t"
+#else
+    "L_fe_pow22523_8_%=:\n\t"
+#endif
         "MOV	r1, sp\n\t"
         "MOV	r0, sp\n\t"
         "PUSH	{r12}\n\t"
         "BL	fe_sq_op\n\t"
         "POP	{r12}\n\t"
         "SUBS	r12, r12, #0x1\n\t"
-#if defined(__GNUC__) || defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-        "BNE	L_fe_pow22523_8\n\t"
-#else
+#if defined(__GNUC__)
+        "BNE	L_fe_pow22523_8_%=\n\t"
+#elif defined(__IAR_SYSTEMS_ICC__) && (__VER__ < 9000000)
         "BNE.N	L_fe_pow22523_8\n\t"
+#else
+        "BNE.N	L_fe_pow22523_8_%=\n\t"
 #endif
         "LDR	r2, [sp, #100]\n\t"
         "MOV	r1, sp\n\t"
@@ -4434,14 +4653,15 @@ void fe_pow22523(fe r, const fe a)
         "ADD	sp, sp, #0x68\n\t"
         : [r] "+r" (r), [a] "+r" (a)
         :
-        : "memory", "lr", "r12", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "cc"
+        : "memory", "cc", "lr", "r12", "r2", "r3", "r4", "r5", "r6", "r7", "r8",
+            "r9", "r10", "r11"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_p1p1_to_p2(ge_p2 * r_p, const ge_p1p1 * p_p)
+WC_OMIT_FRAME_POINTER void ge_p1p1_to_p2(ge_p2 * r_p, const ge_p1p1 * p_p)
 #else
-void ge_p1p1_to_p2(ge_p2 * r, const ge_p1p1 * p)
+WC_OMIT_FRAME_POINTER void ge_p1p1_to_p2(ge_p2 * r, const ge_p1p1 * p)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4470,14 +4690,15 @@ void ge_p1p1_to_p2(ge_p2 * r, const ge_p1p1 * p)
         "ADD	sp, sp, #0x8\n\t"
         : [r] "+r" (r), [p] "+r" (p)
         :
-        : "memory", "lr", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "cc"
+        : "memory", "cc", "lr", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
+            "r10", "r11", "r12"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_p1p1_to_p3(ge_p3 * r_p, const ge_p1p1 * p_p)
+WC_OMIT_FRAME_POINTER void ge_p1p1_to_p3(ge_p3 * r_p, const ge_p1p1 * p_p)
 #else
-void ge_p1p1_to_p3(ge_p3 * r, const ge_p1p1 * p)
+WC_OMIT_FRAME_POINTER void ge_p1p1_to_p3(ge_p3 * r, const ge_p1p1 * p)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4511,14 +4732,15 @@ void ge_p1p1_to_p3(ge_p3 * r, const ge_p1p1 * p)
         "ADD	sp, sp, #0x8\n\t"
         : [r] "+r" (r), [p] "+r" (p)
         :
-        : "memory", "lr", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "cc"
+        : "memory", "cc", "lr", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
+            "r10", "r11", "r12"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_p2_dbl(ge_p1p1 * r_p, const ge_p2 * p_p)
+WC_OMIT_FRAME_POINTER void ge_p2_dbl(ge_p1p1 * r_p, const ge_p2 * p_p)
 #else
-void ge_p2_dbl(ge_p1p1 * r, const ge_p2 * p)
+WC_OMIT_FRAME_POINTER void ge_p2_dbl(ge_p1p1 * r, const ge_p2 * p)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4564,14 +4786,17 @@ void ge_p2_dbl(ge_p1p1 * r, const ge_p2 * p)
         "ADD	sp, sp, #0x8\n\t"
         : [r] "+r" (r), [p] "+r" (p)
         :
-        : "memory", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_madd(ge_p1p1 * r_p, const ge_p3 * p_p, const ge_precomp * q_p)
+WC_OMIT_FRAME_POINTER void ge_madd(ge_p1p1 * r_p, const ge_p3 * p_p,
+    const ge_precomp * q_p)
 #else
-void ge_madd(ge_p1p1 * r, const ge_p3 * p, const ge_precomp * q)
+WC_OMIT_FRAME_POINTER void ge_madd(ge_p1p1 * r, const ge_p3 * p,
+    const ge_precomp * q)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4652,14 +4877,17 @@ void ge_madd(ge_p1p1 * r, const ge_p3 * p, const ge_precomp * q)
         "ADD	sp, sp, #0xc\n\t"
         : [r] "+r" (r), [p] "+r" (p), [q] "+r" (q)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_msub(ge_p1p1 * r_p, const ge_p3 * p_p, const ge_precomp * q_p)
+WC_OMIT_FRAME_POINTER void ge_msub(ge_p1p1 * r_p, const ge_p3 * p_p,
+    const ge_precomp * q_p)
 #else
-void ge_msub(ge_p1p1 * r, const ge_p3 * p, const ge_precomp * q)
+WC_OMIT_FRAME_POINTER void ge_msub(ge_p1p1 * r, const ge_p3 * p,
+    const ge_precomp * q)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4741,14 +4969,17 @@ void ge_msub(ge_p1p1 * r, const ge_p3 * p, const ge_precomp * q)
         "ADD	sp, sp, #0xc\n\t"
         : [r] "+r" (r), [p] "+r" (p), [q] "+r" (q)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_add(ge_p1p1 * r_p, const ge_p3 * p_p, const ge_cached* q_p)
+WC_OMIT_FRAME_POINTER void ge_add(ge_p1p1 * r_p, const ge_p3 * p_p,
+    const ge_cached* q_p)
 #else
-void ge_add(ge_p1p1 * r, const ge_p3 * p, const ge_cached* q)
+WC_OMIT_FRAME_POINTER void ge_add(ge_p1p1 * r, const ge_p3 * p,
+    const ge_cached* q)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4830,14 +5061,17 @@ void ge_add(ge_p1p1 * r, const ge_p3 * p, const ge_cached* q)
         "ADD	sp, sp, #0x2c\n\t"
         : [r] "+r" (r), [p] "+r" (p), [q] "+r" (q)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void ge_sub(ge_p1p1 * r_p, const ge_p3 * p_p, const ge_cached* q_p)
+WC_OMIT_FRAME_POINTER void ge_sub(ge_p1p1 * r_p, const ge_p3 * p_p,
+    const ge_cached* q_p)
 #else
-void ge_sub(ge_p1p1 * r, const ge_p3 * p, const ge_cached* q)
+WC_OMIT_FRAME_POINTER void ge_sub(ge_p1p1 * r, const ge_p3 * p,
+    const ge_cached* q)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4919,15 +5153,18 @@ void ge_sub(ge_p1p1 * r, const ge_p3 * p, const ge_cached* q)
         "ADD	sp, sp, #0x2c\n\t"
         : [r] "+r" (r), [p] "+r" (p), [q] "+r" (q)
         :
-        : "memory", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
+            "r11", "r12", "lr"
     );
 }
 
-#ifdef WOLFSSL_SP_NO_UMAAL
+#endif /* HAVE_ED25519 || WOLFSSL_CURVE25519_USE_ED25519 */
+#ifdef HAVE_ED25519
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void sc_reduce(byte* s_p)
+WC_OMIT_FRAME_POINTER void sc_reduce(byte* s_p)
 #else
-void sc_reduce(byte* s)
+WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -5353,15 +5590,16 @@ void sc_reduce(byte* s)
         "ADD	sp, sp, #0x38\n\t"
         : [s] "+r" (s)
         :
-        : "memory", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
+            "r10", "r11", "r12", "lr"
     );
 }
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void sc_reduce(byte* s_p)
+WC_OMIT_FRAME_POINTER void sc_reduce(byte* s_p)
 #else
-void sc_reduce(byte* s)
+WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -5658,17 +5896,20 @@ void sc_reduce(byte* s)
         "ADD	sp, sp, #0x38\n\t"
         : [s] "+r" (s)
         :
-        : "memory", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9",
+            "r10", "r11", "r12", "lr"
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #ifdef HAVE_ED25519_SIGN
-#ifdef WOLFSSL_SP_NO_UMAAL
+#ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void sc_muladd(byte* s_p, const byte* a_p, const byte* b_p, const byte* c_p)
+WC_OMIT_FRAME_POINTER void sc_muladd(byte* s_p, const byte* a_p,
+    const byte* b_p, const byte* c_p)
 #else
-void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
+WC_OMIT_FRAME_POINTER void sc_muladd(byte* s, const byte* a, const byte* b,
+    const byte* c)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -6011,20 +6252,20 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "MOV	%[s], sp\n\t"
         /* Add c to a * b */
         "LDR	lr, [sp, #76]\n\t"
-        "LDM	%[s], {%[b], %[c], r4, r5, r6, r7, r8, r9}\n\t"
-        "LDM	lr!, {%[a], r10, r11, r12}\n\t"
+        "LDM	%[s], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
+        "LDM	lr!, {r1, r10, r11, r12}\n\t"
         "ADDS	%[b], %[b], %[a]\n\t"
         "ADCS	%[c], %[c], r10\n\t"
         "ADCS	r4, r4, r11\n\t"
         "ADCS	r5, r5, r12\n\t"
-        "LDM	lr!, {%[a], r10, r11, r12}\n\t"
+        "LDM	lr!, {r1, r10, r11, r12}\n\t"
         "ADCS	r6, r6, %[a]\n\t"
         "ADCS	r7, r7, r10\n\t"
         "ADCS	r8, r8, r11\n\t"
         "ADCS	r9, r9, r12\n\t"
         "MOV	%[a], r9\n\t"
         "STM	%[s]!, {%[b], %[c], r4, r5, r6, r7, r8, r9}\n\t"
-        "LDM	%[s], {%[b], %[c], r4, r5, r6, r7, r8, r9}\n\t"
+        "LDM	%[s], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         "ADCS	%[b], %[b], #0x0\n\t"
         "ADCS	%[c], %[c], #0x0\n\t"
         "ADCS	r4, r4, #0x0\n\t"
@@ -6311,7 +6552,7 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "MOV	r12, sp\n\t"
         /* Load bits 252-376 */
         "ADD	r12, r12, #0x1c\n\t"
-        "LDM	r12, {%[a], %[b], %[c], r4, r5}\n\t"
+        "LDM	r12, {r1, r2, r3, r4, r5}\n\t"
         "LSL	r5, r5, #4\n\t"
         "ORR	r5, r5, r4, LSR #28\n\t"
         "LSL	r4, r4, #4\n\t"
@@ -6418,7 +6659,7 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "SBCS	r9, r9, r5\n\t"
         "SBC	%[a], %[a], %[a]\n\t"
         "SUB	%[s], %[s], #0x10\n\t"
-        "LDM	%[s], {%[b], %[c], r4, r5}\n\t"
+        "LDM	%[s], {r2, r3, r4, r5}\n\t"
         "MOV	r10, #0xd3ed\n\t"
         "MOVT	r10, #0x5cf5\n\t"
         "MOV	r11, #0x631a\n\t"
@@ -6454,15 +6695,18 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "ADD	sp, sp, #0x50\n\t"
         : [s] "+r" (s), [a] "+r" (a), [b] "+r" (b), [c] "+r" (c)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r12", "lr"
     );
 }
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-void sc_muladd(byte* s_p, const byte* a_p, const byte* b_p, const byte* c_p)
+WC_OMIT_FRAME_POINTER void sc_muladd(byte* s_p, const byte* a_p,
+    const byte* b_p, const byte* c_p)
 #else
-void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
+WC_OMIT_FRAME_POINTER void sc_muladd(byte* s, const byte* a, const byte* b,
+    const byte* c)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -6477,7 +6721,7 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "ADD	lr, sp, #0x44\n\t"
         "STM	lr, {%[s], %[a], %[c]}\n\t"
         "MOV	lr, %[b]\n\t"
-        "LDM	%[a], {%[s], %[a], %[b], %[c]}\n\t"
+        "LDM	%[a], {r0, r1, r2, r3}\n\t"
         "LDM	lr!, {r4, r5, r6}\n\t"
         "UMULL	r10, r11, %[s], r4\n\t"
         "UMULL	r12, r7, %[a], r4\n\t"
@@ -6522,7 +6766,7 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "UMAAL	r4, r6, %[b], r7\n\t"
         "SUB	lr, lr, #0x10\n\t"
         "UMAAL	r5, r6, %[c], r7\n\t"
-        "LDM	%[s], {%[s], %[a], %[b], %[c]}\n\t"
+        "LDM	%[s], {r0, r1, r2, r3}\n\t"
         "STR	r6, [sp, #64]\n\t"
         "LDM	lr!, {r6}\n\t"
         "MOV	r7, #0x0\n\t"
@@ -6578,20 +6822,20 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "MOV	%[s], sp\n\t"
         /* Add c to a * b */
         "LDR	lr, [sp, #76]\n\t"
-        "LDM	%[s], {%[b], %[c], r4, r5, r6, r7, r8, r9}\n\t"
-        "LDM	lr!, {%[a], r10, r11, r12}\n\t"
+        "LDM	%[s], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
+        "LDM	lr!, {r1, r10, r11, r12}\n\t"
         "ADDS	%[b], %[b], %[a]\n\t"
         "ADCS	%[c], %[c], r10\n\t"
         "ADCS	r4, r4, r11\n\t"
         "ADCS	r5, r5, r12\n\t"
-        "LDM	lr!, {%[a], r10, r11, r12}\n\t"
+        "LDM	lr!, {r1, r10, r11, r12}\n\t"
         "ADCS	r6, r6, %[a]\n\t"
         "ADCS	r7, r7, r10\n\t"
         "ADCS	r8, r8, r11\n\t"
         "ADCS	r9, r9, r12\n\t"
         "MOV	%[a], r9\n\t"
         "STM	%[s]!, {%[b], %[c], r4, r5, r6, r7, r8, r9}\n\t"
-        "LDM	%[s], {%[b], %[c], r4, r5, r6, r7, r8, r9}\n\t"
+        "LDM	%[s], {r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         "ADCS	%[b], %[b], #0x0\n\t"
         "ADCS	%[c], %[c], #0x0\n\t"
         "ADCS	r4, r4, #0x0\n\t"
@@ -6785,7 +7029,7 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "MOV	r12, sp\n\t"
         /* Load bits 252-376 */
         "ADD	r12, r12, #0x1c\n\t"
-        "LDM	r12, {%[a], %[b], %[c], r4, r5}\n\t"
+        "LDM	r12, {r1, r2, r3, r4, r5}\n\t"
         "LSL	r5, r5, #4\n\t"
         "ORR	r5, r5, r4, LSR #28\n\t"
         "LSL	r4, r4, #4\n\t"
@@ -6856,7 +7100,7 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "SBCS	r9, r9, r5\n\t"
         "SBC	%[a], %[a], %[a]\n\t"
         "SUB	%[s], %[s], #0x10\n\t"
-        "LDM	%[s], {%[b], %[c], r4, r5}\n\t"
+        "LDM	%[s], {r2, r3, r4, r5}\n\t"
         "MOV	r10, #0xd3ed\n\t"
         "MOVT	r10, #0x5cf5\n\t"
         "MOV	r11, #0x631a\n\t"
@@ -6892,19 +7136,18 @@ void sc_muladd(byte* s, const byte* a, const byte* b, const byte* c)
         "ADD	sp, sp, #0x50\n\t"
         : [s] "+r" (s), [a] "+r" (a), [b] "+r" (b), [c] "+r" (c)
         :
-        : "memory", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr", "cc"
+        : "memory", "cc", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11",
+            "r12", "lr"
     );
 }
 
-#endif /* WOLFSSL_SP_NO_UMAAL */
+#endif /* WOLFSSL_ARM_ARCH_7M */
 #endif /* HAVE_ED25519_SIGN */
 #endif /* HAVE_ED25519 */
 
 #endif /* !CURVE25519_SMALL || !ED25519_SMALL */
 #endif /* HAVE_CURVE25519 || HAVE_ED25519 */
-#endif /* !__aarch64__ && __thumb__ */
-#endif /* WOLFSSL_ARMASM */
-#endif /* !defined(__aarch64__) && defined(__thumb__) */
+#endif /* WOLFSSL_ARMASM_THUMB2 */
 #endif /* WOLFSSL_ARMASM */
 
 #endif /* WOLFSSL_ARMASM_INLINE */

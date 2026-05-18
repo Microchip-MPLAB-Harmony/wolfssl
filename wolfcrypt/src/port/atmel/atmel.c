@@ -1,12 +1,12 @@
 /* atmel.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -106,7 +106,7 @@ int atmel_get_random_number(uint32_t count, uint8_t* rand_out)
 {
     int ret = 0;
 #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
-    uint8_t i = 0;
+    uint32_t i = 0;
     uint32_t copy_count = 0;
     uint8_t rng_buffer[RANDOM_NUM_SIZE];
 
@@ -136,7 +136,7 @@ int atmel_get_random_number(uint32_t count, uint8_t* rand_out)
 
 int atmel_get_random_block(unsigned char* output, unsigned int sz)
 {
-	return atmel_get_random_number((uint32_t)sz, (uint8_t*)output);
+        return atmel_get_random_number((uint32_t)sz, (uint8_t*)output);
 }
 
 #if defined(WOLFSSL_ATMEL) && defined(WOLFSSL_ATMEL_TIME)
@@ -148,12 +148,12 @@ long atmel_get_curr_time_and_date(long* tm)
 {
     long rt = 0;
 
-	/* Get current time */
+        /* Get current time */
     struct rtc_calendar_time rtcTime;
     const int monthDay[] = {0,31,59,90,120,151,181,212,243,273,304,334};
     int month, year, yearLeap;
 
-	rtc_calendar_get_time(_rtc_instance[0], &rtcTime);
+        rtc_calendar_get_time(_rtc_instance[0], &rtcTime);
 
     /* Convert rtc_calendar_time to seconds since UTC */
     month = rtcTime.month % 12;
@@ -292,7 +292,12 @@ int atmel_ecc_alloc(int slotType)
                         break;
                     }
                 }
+                if (slotId == ATECC_INVALID_SLOT) {
+                    goto exit;
+                }
                 break;
+            default:
+                goto exit;
         }
 
         /* is slot available */
@@ -359,7 +364,7 @@ int atmel_get_enc_key_default(byte* enckey, word16 keysize)
 static int atmel_init_enc_key(void)
 {
     int ret;
-	uint8_t read_key[ATECC_KEY_SIZE];
+        uint8_t read_key[ATECC_KEY_SIZE];
     uint8_t writeBlock = 0;
     uint8_t writeOffset = 0;
     int slotId;
@@ -388,7 +393,7 @@ static int atmel_init_enc_key(void)
     ForceZero(read_key, sizeof(read_key));
     ret = atmel_ecc_translate_err(ret);
 
-	return ret;
+        return ret;
 }
 #endif
 
@@ -497,7 +502,7 @@ int atmel_init(void)
     extern ATCAIfaceCfg atecc608_0_init_data;
     #endif
 #endif
-    
+
     if (!mAtcaInitDone) {
         ATCA_STATUS status;
         int i;
@@ -686,13 +691,16 @@ int atcatls_create_pms_cb(WOLFSSL* ssl, ecc_key* otherKey,
         /* for client: create and export public key */
         if (side == WOLFSSL_CLIENT_END) {
             int slotId = atmel_ecc_alloc(ATMEL_SLOT_ECDHE);
-            if (slotId == ATECC_INVALID_SLOT)
-                return WC_HW_WAIT_E;
+            if (slotId == ATECC_INVALID_SLOT) {
+                ret = WC_HW_WAIT_E;
+                goto exit;
+            }
             tmpKey.slot = slotId;
 
             /* generate new ephemeral key on device */
             ret = atmel_ecc_create_key(slotId, peerKey);
             if (ret != ATCA_SUCCESS) {
+                atmel_ecc_free(slotId);
                 goto exit;
             }
 
@@ -885,6 +893,7 @@ int atcatls_verify_signature_cb(WOLFSSL* ssl, const byte* sig,
         ret = wc_EccPublicKeyDecode(key, &idx, &tmpKey, keySz);
     }
     if (ret != 0) {
+        wc_ecc_free(&tmpKey);
         goto exit;
     }
 
@@ -920,6 +929,8 @@ int atcatls_verify_signature_cb(WOLFSSL* ssl, const byte* sig,
     #else
         ret = NOT_COMPILED_IN;
     #endif /* !WOLFSSL_ATECC508A_NOSOFTECC */
+        wc_ecc_free(&tmpKey);
+        goto exit;
     }
 
     (void)rSz;
@@ -940,7 +951,7 @@ exit:
     return ret;
 }
 
-static int atcatls_set_certificates(WOLFSSL_CTX *ctx) 
+static int atcatls_set_certificates(WOLFSSL_CTX *ctx)
 {
     #ifndef ATCATLS_SIGNER_CERT_MAX_SIZE
         #define ATCATLS_SIGNER_CERT_MAX_SIZE 0x250
@@ -966,7 +977,7 @@ static int atcatls_set_certificates(WOLFSSL_CTX *ctx)
     uint8_t signerPubKeyBuffer[ATCATLS_PUBKEY_BUFF_MAX_SIZE];
 #endif
 
-#ifdef WOLFSSL_ATECC_TNGTLS	
+#ifdef WOLFSSL_ATECC_TNGTLS
     ret = tng_atcacert_max_signer_cert_size(&signerCertSize);
     if (ret != ATCACERT_E_SUCCESS) {
     #ifdef WOLFSSL_ATECC_DEBUG
@@ -1048,6 +1059,13 @@ static int atcatls_set_certificates(WOLFSSL_CTX *ctx)
         printf("Failed to read device cert!\r\n");
     #endif
         return (int)status;
+    }
+    else if (deviceCertSize > ATCATLS_DEVICE_CERT_MAX_SIZE) {
+    #ifdef WOLFSSL_ATECC_DEBUG
+        printf("Device cert buffer too small, need to increase at least"
+               " to %d\r\n", deviceCertSize);
+    #endif
+       return -1;
     }
 #endif
 

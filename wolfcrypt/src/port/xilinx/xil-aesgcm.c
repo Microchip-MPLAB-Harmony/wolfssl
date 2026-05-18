@@ -1,12 +1,12 @@
 /* xil-aesgcm.c
  *
- * Copyright (C) 2006-2023 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
  * wolfSSL is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * wolfSSL is distributed in the hope that it will be useful,
@@ -87,9 +87,9 @@ static WC_INLINE int aligned_xmalloc(byte** buf, byte** aligned, void* heap, wor
 
 static WC_INLINE void aligned_xfree(void* buf, void* heap)
 {
-	if (buf == NULL)
-		return;
-	XFREE(buf, heap, DYNAMIC_TYPE_TMP_BUFFER);
+        if (buf == NULL)
+                return;
+        XFREE(buf, heap, DYNAMIC_TYPE_TMP_BUFFER);
 }
 
 static WC_INLINE int check_keysize(word32 len)
@@ -199,8 +199,7 @@ static WC_INLINE int setup(Aes* aes,
 
     WOLFSSL_XIL_DCACHE_FLUSH_RANGE((UINTPTR)aad, authInSz);
 
-    if (XSecure_AesUpdateAad(&(aes->xSec.cinst), XIL_CAST_U64(authIn),
-                             authInSz)) {
+    if (XSecure_AesUpdateAad(&(aes->xSec.cinst), XIL_CAST_U64(aad), authInSz)) {
         WOLFSSL_XIL_MSG("Failed to set AAD");
         err = 1;
     } else {
@@ -219,10 +218,10 @@ static WC_INLINE int handle_aad(       Aes* aes,
                                       byte* authTag,
                                 const byte* authIn, word32 authInSz) {
     int ret;
-    byte scratch[AES_BLOCK_SIZE];
-    byte initalCounter[AES_BLOCK_SIZE] = { 0 };
+    byte scratch[WC_AES_BLOCK_SIZE];
+    byte initalCounter[WC_AES_BLOCK_SIZE] = { 0 };
     XMEMCPY(initalCounter, iv, AEAD_NONCE_SZ);
-    initalCounter[AES_BLOCK_SIZE - 1] = 1;
+    initalCounter[WC_AES_BLOCK_SIZE - 1] = 1;
     GHASH(&aes->gcm, authIn, authInSz, data, sz, authTag, AES_GCM_AUTH_SZ);
     ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
     if (ret == 0)
@@ -272,7 +271,7 @@ int wc_AesGcmEncrypt(       Aes* aes, byte* out,
         if (ret) {
             WOLFSSL_MSG(
                     "Failed to alloc memory for AESGCM Encrypt alignment (in)");
-            return 1;
+            return ret;
         }
         XMEMCPY(in_aligned, in, sz);
     }
@@ -290,7 +289,7 @@ int wc_AesGcmEncrypt(       Aes* aes, byte* out,
                 aligned_xfree(in_buf, aes->heap);
                 WOLFSSL_MSG(
                         "Failed to alloc memory for AESGCM Encrypt alignment (out)");
-                return 1;
+                return ret;
             }
             XMEMCPY(out_aligned, out, sz);
         }
@@ -387,7 +386,7 @@ int  wc_AesGcmDecrypt(       Aes* aes, byte* out,
         if (ret) {
             WOLFSSL_MSG(
                     "Failed to alloc memory for AESGCM Decrypt alignment (in)");
-            return 1;
+            return ret;
         }
         XMEMCPY(in_aligned, in, sz);
     }
@@ -405,7 +404,7 @@ int  wc_AesGcmDecrypt(       Aes* aes, byte* out,
                 aligned_xfree(in_buf, aes->heap);
                 WOLFSSL_MSG(
                         "Failed to alloc memory for AESGCM Decrypt alignment (out)");
-                return 1;
+                return ret;
             }
             XMEMCPY(out_aligned, out, sz);
         }
@@ -524,12 +523,12 @@ int  wc_AesGcmEncrypt(Aes* aes, byte* out,
                                    const byte* authIn, word32 authInSz)
 {
     byte* tmp;
-    byte scratch[AES_BLOCK_SIZE];
-    byte initalCounter[AES_BLOCK_SIZE];
+    byte scratch[WC_AES_BLOCK_SIZE];
+    byte initalCounter[WC_AES_BLOCK_SIZE];
     int ret;
 
-    if ((in == NULL && sz > 0) || iv == NULL || authTag == NULL ||
-            authTagSz > AES_GCM_AUTH_SZ) {
+    if (aes == NULL || (in == NULL && sz > 0) || (out == NULL) || iv == NULL ||
+            authTag == NULL || authTagSz > AES_GCM_AUTH_SZ) {
         return BAD_FUNC_ARG;
     }
 
@@ -572,9 +571,9 @@ int  wc_AesGcmEncrypt(Aes* aes, byte* out,
     /* handle completing tag with any additional data */
     if (authIn != NULL) {
         /* @TODO avoid hashing out again since Xilinx call already does */
-        XMEMSET(initalCounter, 0, AES_BLOCK_SIZE);
+        XMEMSET(initalCounter, 0, WC_AES_BLOCK_SIZE);
         XMEMCPY(initalCounter, iv, ivSz);
-        initalCounter[AES_BLOCK_SIZE - 1] = 1;
+        initalCounter[WC_AES_BLOCK_SIZE - 1] = 1;
         GHASH(&aes->gcm, authIn, authInSz, out, sz, authTag, authTagSz);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
         if (ret < 0)
@@ -594,12 +593,12 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out,
 {
     byte* tag;
     byte buf[AES_GCM_AUTH_SZ];
-    byte scratch[AES_BLOCK_SIZE];
-    byte initalCounter[AES_BLOCK_SIZE];
+    byte scratch[WC_AES_BLOCK_SIZE];
+    byte initalCounter[WC_AES_BLOCK_SIZE];
     int ret;
 
-    if (in == NULL || iv == NULL || authTag == NULL ||
-            authTagSz < AES_GCM_AUTH_SZ) {
+    if (aes == NULL || in == NULL || out == NULL || iv == NULL ||
+            authTag == NULL || authTagSz < AES_GCM_AUTH_SZ) {
         return BAD_FUNC_ARG;
     }
 
@@ -610,9 +609,9 @@ int  wc_AesGcmDecrypt(Aes* aes, byte* out,
 
     /* account for additional data */
     if (authIn != NULL && authInSz > 0) {
-        XMEMSET(initalCounter, 0, AES_BLOCK_SIZE);
+        XMEMSET(initalCounter, 0, WC_AES_BLOCK_SIZE);
         XMEMCPY(initalCounter, iv, ivSz);
-        initalCounter[AES_BLOCK_SIZE - 1] = 1;
+        initalCounter[WC_AES_BLOCK_SIZE - 1] = 1;
         tag = buf;
         GHASH(&aes->gcm, NULL, 0, in, sz, tag, AES_GCM_AUTH_SZ);
         ret = wc_AesEncryptDirect(aes, scratch, initalCounter);
